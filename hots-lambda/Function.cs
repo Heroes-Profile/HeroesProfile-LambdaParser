@@ -42,7 +42,7 @@ namespace hotslambda
                 EndpointUri = new Uri(uri),
                 HttpMethod = "GET",
                 Service = "s3",
-                Region = "eu-east-1"
+                Region = "us-east-1"
             };
 
             var authorization = signer.ComputeSignature(headers,

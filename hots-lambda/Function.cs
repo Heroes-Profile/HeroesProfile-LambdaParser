@@ -19,12 +19,12 @@ namespace hotslambda
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public object FunctionHandler(IDictionary<string, string> dict, ILambdaContext context)
         {
-            return MainAsync(dict["input"], dict["access"], dict["secret"], dict["fingerprint"]).GetAwaiter().GetResult();
+            return MainAsync(dict["input"], dict["access"], dict["secret"]).GetAwaiter().GetResult();
         }
 
         static readonly string Prefix = "http://heroesprofile-replayfile-storage.s3.amazonaws.com/";
 
-        public static async System.Threading.Tasks.Task<object> MainAsync(string uri, string AWSAccessKey, string AWSSecretKey, string fingerprint)
+        public static async System.Threading.Tasks.Task<object> MainAsync(string uri, string AWSAccessKey, string AWSSecretKey)
         {
             var sp = uri.Split('/');
             uri = Prefix + sp.Last();
@@ -71,30 +71,30 @@ namespace hotslambda
                 bytes = dst.ToArray();
             }
             
-            var result = DataParser.ParseReplay(bytes, ParseOptions.MediumParsing);
+            var result = DataParser.ParseReplay(bytes, new ParseOptions
+                                            {
+                                                ShouldParseUnits = false,
+                                                ShouldParseMouseEvents = false,
+                                                ShouldParseDetailedBattleLobby = true,
+                                                ShouldParseEvents = false,
+                                                AllowPTR = false
+                                            });
+
             if (result.Item1 != DataParser.ReplayParseResult.Success || result.Item2 == null)
             {
                 return $"Error parsing replay: {result.Item1}";
             }
             string calculated_fingerprint = GetFingerprint(result.Item2);
 
-            bool match = true;
-
-            if (calculated_fingerprint != fingerprint)
-            {
-                match = false;
-
-            }
-            return ToJson(result.Item2, match, calculated_fingerprint);
+            return ToJson(result.Item2, calculated_fingerprint);
         }
 
-        public static object ToJson(Replay replay, bool match, string calculated_fingerprint)
+        public static object ToJson(Replay replay, string calculated_fingerprint)
         {
             var obj = new
             {
                 random_value = replay.RandomValue,
                 calculated_fingerprint = calculated_fingerprint,
-                fingerprint_match = match,
                 mode = replay.GameMode.ToString(),
                 region = replay.Players[0].BattleNetRegionId,
                 date = replay.Timestamp,

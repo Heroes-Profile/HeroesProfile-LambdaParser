@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
@@ -17,12 +19,12 @@ namespace hotslambda
         [LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
         public object FunctionHandler(IDictionary<string, string> dict, ILambdaContext context)
         {
-            return MainAsync(dict["input"], dict["access"], dict["secret"]).GetAwaiter().GetResult();
+            return MainAsync(dict["input"], dict["access"], dict["secret"], dict["fingerprint"]).GetAwaiter().GetResult();
         }
 
-        static readonly string Prefix = "http://hotsapi.s3.amazonaws.com/";
+        static readonly string Prefix = "http://heroesprofile-replayfile-storage.s3.amazonaws.com/";
 
-        public static async System.Threading.Tasks.Task<object> MainAsync(string uri, string AWSAccessKey, string AWSSecretKey)
+        public static async System.Threading.Tasks.Task<object> MainAsync(string uri, string AWSAccessKey, string AWSSecretKey, string fingerprint)
         {
             var sp = uri.Split('/');
             uri = Prefix + sp.Last();
@@ -40,7 +42,7 @@ namespace hotslambda
                 EndpointUri = new Uri(uri),
                 HttpMethod = "GET",
                 Service = "s3",
-                Region = "eu-west-1"
+                Region = "eu-east-1"
             };
 
             var authorization = signer.ComputeSignature(headers,
@@ -74,13 +76,24 @@ namespace hotslambda
             {
                 return $"Error parsing replay: {result.Item1}";
             }
-            return ToJson(result.Item2);
+            string calculated_fingerprint = GetFingerprint(result.Item2);
+
+            bool match = true;
+
+            if (calculated_fingerprint != fingerprint)
+            {
+                match = false;
+
+            }
+            return ToJson(result.Item2, match);
         }
 
-        public static object ToJson(Replay replay)
+        public static object ToJson(Replay replay, bool match)
         {
             var obj = new
             {
+                random_value = replay.RandomValue,
+                fingerprint_match = match,
                 mode = replay.GameMode.ToString(),
                 region = replay.Players[0].BattleNetRegionId,
                 date = replay.Timestamp,
@@ -123,6 +136,16 @@ namespace hotslambda
                           }
             };
             return obj;
+        }
+
+        private static string GetFingerprint(Replay replay)
+        {
+            var str = new StringBuilder();
+            replay.Players.Select(p => p.BattleNetId).OrderBy(x => x).Map(x => str.Append(x.ToString()));
+            str.Append(replay.RandomValue);
+            var md5 = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(str.ToString()));
+            var result = new Guid(md5);
+            return result.ToString();
         }
     }
 }

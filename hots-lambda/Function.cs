@@ -85,14 +85,15 @@ namespace hotslambda
                 match = false;
 
             }
-            return ToJson(result.Item2, match);
+            return ToJson(result.Item2, match, calculated_fingerprint);
         }
 
-        public static object ToJson(Replay replay, bool match)
+        public static object ToJson(Replay replay, bool match, string calculated_fingerprint)
         {
             var obj = new
             {
                 random_value = replay.RandomValue,
+                calculated_fingerprint = calculated_fingerprint,
                 fingerprint_match = match,
                 mode = replay.GameMode.ToString(),
                 region = replay.Players[0].BattleNetRegionId,

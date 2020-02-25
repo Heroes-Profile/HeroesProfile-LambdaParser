@@ -22,7 +22,7 @@ namespace hotslambda
             return MainAsync(dict["input"], dict["access"], dict["secret"], dict["fingerprint"]).GetAwaiter().GetResult();
         }
 
-        static readonly string Prefix = "http://heroesprofile-replayfile-storage.s3.amazonaws.com/";
+        static readonly string Prefix = "http://heroesprofile.s3.amazonaws.com/";
 
         public static async System.Threading.Tasks.Task<object> MainAsync(string uri, string AWSAccessKey, string AWSSecretKey, string fingerprint)
         {

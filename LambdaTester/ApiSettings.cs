@@ -10,5 +10,7 @@ namespace LambdaTester
         public string lambda_parser_endpoint_url { get; set; }
         public string lambda_parser_endpoint_secret { get; set; }
         public string lambda_parser_endpoint_access { get; set; }
+        public string fingerprint { get; set; }
+
     }
 }

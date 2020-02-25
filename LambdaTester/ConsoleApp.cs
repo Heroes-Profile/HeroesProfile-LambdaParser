@@ -15,7 +15,7 @@ namespace LambdaTester
             var apiSettings = ServiceProviderProvider.GetService<ApiSettings>();
 
             var result = await Function.MainAsync(apiSettings.lambda_parser_endpoint_url,
-                    apiSettings.lambda_parser_endpoint_access, apiSettings.lambda_parser_endpoint_secret);
+                    apiSettings.lambda_parser_endpoint_access, apiSettings.lambda_parser_endpoint_secret, apiSettings.fingerprint);
         }
     }
 }

@@ -70,8 +70,9 @@ namespace hotslambda
                 stream.CopyTo(dst);
                 bytes = dst.ToArray();
             }
-            
-            var result = DataParser.ParseReplay(bytes, ParseOptions.MediumParsing);
+
+            //var result = DataParser.ParseReplay(bytes, ParseOptions.MediumParsing);
+            var result = DataParser.ParseReplay(bytes, ParseOptions.DefaultParsing);
             if (result.Item1 != DataParser.ReplayParseResult.Success || result.Item2 == null)
             {
                 return $"Error parsing replay: {result.Item1}";

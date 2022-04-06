@@ -70,8 +70,17 @@ namespace hotslambda
                 stream.CopyTo(dst);
                 bytes = dst.ToArray();
             }
+            var result = DataParser.ParseReplay(bytes, new ParseOptions
+            {
+                ShouldParseUnits = false,
+                ShouldParseMouseEvents = false,
+                ShouldParseDetailedBattleLobby = true,
+                ShouldParseEvents = true,
+                ShouldParseMessageEvents = true
+            });
 
-            var result = DataParser.ParseReplay(bytes, ParseOptions.MediumParsing);
+
+
             if (result.Item1 != DataParser.ReplayParseResult.Success || result.Item2 == null)
             {
                 return $"Error parsing replay: {result.Item1}";
@@ -85,10 +94,10 @@ namespace hotslambda
                 match = false;
 
             }
-            return ToJson(result.Item2, match, calculated_fingerprint);
+            return ToJson(result.Item2, match, calculated_fingerprint, calculateUploadTeam(result.Item2));
         }
 
-        public static object ToJson(Replay replay, bool match, string calculated_fingerprint)
+        public static object ToJson(Replay replay, bool match, string calculated_fingerprint, int upload_team)
         {
             var obj = new
             {
@@ -107,6 +116,7 @@ namespace hotslambda
                 bans = replay.TeamHeroBans,
                 draft_order = replay.DraftOrder,
                 team_experience = replay.TeamPeriodicXPBreakdown,
+                upload_team = upload_team,
                 players = from p in replay.Players
                           select new
                           {
@@ -147,6 +157,22 @@ namespace hotslambda
             var md5 = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(str.ToString()));
             var result = new Guid(md5);
             return result.ToString();
+        }
+
+
+        private static int calculateUploadTeam(Replay replay)
+        {
+            int team = -1;
+
+            if (replay.Messages.Count > 0)
+            {
+                int playerIndex = replay.Messages[0].PlayerIndex;
+
+                var player = replay.Players[playerIndex];
+
+                team = player.Team;
+            }
+            return team;
         }
     }
 }

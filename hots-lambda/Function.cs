@@ -94,10 +94,11 @@ namespace hotslambda
                 match = false;
 
             }
-            return ToJson(result.Item2, match, calculated_fingerprint, calculateUploadTeam(result.Item2));
+            Dictionary<Player, int> cameraDistance = determineCameraDistancePerPlayer(result.Item2);
+            return ToJson(result.Item2, match, calculated_fingerprint, calculateUploadTeam(result.Item2), cameraDistance);
         }
 
-        public static object ToJson(Replay replay, bool match, string calculated_fingerprint, int upload_team)
+        public static object ToJson(Replay replay, bool match, string calculated_fingerprint, int upload_team, Dictionary<Player, int> cameraDistance)
         {
             var obj = new
             {
@@ -123,6 +124,7 @@ namespace hotslambda
                               battletag_name = p.Name,
                               battletag_id = p.BattleTag,
                               blizz_id = p.BattleNetId,
+                              camera_distance = cameraDistance.ContainsKey(p) ? cameraDistance[p] : 0,
                               account_level = p.AccountLevel,
                               hero = p.Character,
                               hero_level = p.CharacterLevel,
@@ -173,6 +175,33 @@ namespace hotslambda
                 team = player.Team;
             }
             return team;
+        }
+
+        private static Dictionary<Player, int> determineCameraDistancePerPlayer(Replay replay)
+        {
+            Dictionary<Player, int> cameraDistance = new Dictionary<Player, int>();
+
+            for (int i = 0; i < replay.GameEvents.Count; i++)
+            {
+                if (replay.GameEvents[i].eventType.ToString() == "CCameraUpdateEvent")
+                {
+                    try
+                    {
+
+                        if (!cameraDistance.ContainsKey(replay.GameEvents[i].player))
+                        {
+                            cameraDistance.Add(replay.GameEvents[i].player, Convert.ToInt32(replay.GameEvents[i].data.array[1].unsignedInt));
+                        }
+
+                    }
+                    catch
+                    {
+
+                    }
+
+                }
+            }
+            return cameraDistance;
         }
     }
 }
